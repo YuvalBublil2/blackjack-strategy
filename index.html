@@ -1,0 +1,791 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>אסטרטגיית בלאק ג'ק</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&family=Secular+One&display=swap">
+<style>
+/* Layout: casino-table identity. Felt-green header, sticky tab bar, one narrow column (max 720px), mobile first. */
+:root {
+  --felt: #0e4a36;
+  --felt-deep: #0a3829;
+  --brass: #d4ac52;
+  --brass-ink: #8a6a1f;
+  --wood: #5b3a22;
+  --bg: #e8efe9;
+  --surface: #ffffff;
+  --surface-2: #f1f6f2;
+  --ink: #12261d;
+  --ink-2: #4a5d52;
+  --line: #cbd8ce;
+  --card: #ffffff;
+  --card-ink: #14201a;
+  --card-red: #c62d2d;
+  --a-h: #c9403d;
+  --a-s: #e3b72a;
+  --a-d: #2e9d5f;
+  --a-p: #2f6dc4;
+  --a-r: #79818a;
+  --a-s-ink: #8a6700;
+  --on-s: #1b1500;
+  --good: #1f8a4f;
+  --bad: #c5352f;
+  --font-display: "Secular One", "Heebo", system-ui, sans-serif;
+  --font-body: "Heebo", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #07130e; --surface: #0f2219; --surface-2: #142c20; --ink: #e7efe9; --ink-2: #9db3a5; --line: #24412f;
+    --a-s-ink: #e3b72a; --brass-ink: #d4ac52; --good: #4cc380; --bad: #ff7d75;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #07130e; --surface: #0f2219; --surface-2: #142c20; --ink: #e7efe9; --ink-2: #9db3a5; --line: #24412f;
+  --a-s-ink: #e3b72a; --brass-ink: #d4ac52; --good: #4cc380; --bad: #ff7d75;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.55;
+  padding-inline: 0; padding-block: 0; margin: 0;
+}
+bdi, .ltr { unicode-bidi: isolate; direction: ltr; }
+button { font-family: inherit; font-size: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 3px solid var(--brass); outline-offset: 2px; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 400; text-wrap: balance; margin: 0; }
+.wrap { max-width: 720px; margin-inline: auto; padding-inline: 16px; }
+
+/* Header */
+.top {
+  background: radial-gradient(120% 140% at 50% 0%, #14624a 0%, var(--felt) 55%, var(--felt-deep) 100%);
+  border-bottom: 3px solid var(--brass);
+  color: #f4efe0;
+}
+.top .wrap { padding-block: 22px 18px; }
+.top-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.top h1 { font-size: 1.9rem; line-height: 1.15; color: #fbf4de; }
+.top p { margin: 4px 0 0; color: #cfe3d8; font-size: .95rem; }
+.theme-btn {
+  flex: none; width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(0,0,0,.25); border: 1.5px solid var(--brass); color: var(--brass);
+  display: grid; place-items: center; font-size: 1.15rem; line-height: 1;
+}
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; padding: 0; list-style: none; }
+.tags li {
+  border: 1px solid var(--brass); color: #f1dfaa; background: rgba(0,0,0,.18);
+  border-radius: 999px; padding: 3px 12px; font-size: .84rem; font-weight: 500;
+}
+
+/* Tabs */
+.tabbar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  background: var(--bg); border-bottom: 1px solid var(--line);
+}
+.tabs { display: flex; gap: 8px; padding-block: 10px; }
+.tab {
+  flex: 1; padding: 10px 12px; border-radius: 10px; border: 1.5px solid var(--line);
+  background: var(--surface); font-weight: 700; font-size: 1rem;
+}
+.tab[aria-selected="true"] { background: var(--felt); color: #fbf4de; border-color: var(--brass); }
+
+main { padding-block: 18px 40px; display: flex; flex-direction: column; gap: 18px; }
+section.panel { display: flex; flex-direction: column; gap: 18px; }
+
+.box { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; min-width: 0; }
+.box h2 { font-size: 1.25rem; margin-bottom: 10px; }
+.lbl { font-size: .8rem; font-weight: 700; letter-spacing: .04em; color: var(--ink-2); margin: 0 0 8px; }
+
+/* Picker */
+.dchips { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.dchip {
+  aspect-ratio: 5 / 6; max-height: 76px; border-radius: 8px; background: var(--card); color: var(--card-ink);
+  border: 2px solid var(--line); font-family: var(--font-display); font-size: 1.35rem; position: relative;
+}
+.dchip[aria-pressed="true"] { border-color: var(--brass); box-shadow: 0 0 0 2px var(--brass), 0 4px 10px rgba(0,0,0,.25); transform: translateY(-2px); }
+.seg { display: flex; gap: 6px; }
+.seg button { flex: 1; padding: 8px 6px; border-radius: 9px; border: 1.5px solid var(--line); background: var(--surface-2); font-weight: 700; }
+.seg button[aria-pressed="true"], .seg button[aria-selected="true"] { background: var(--felt); color: #fbf4de; border-color: var(--brass); }
+.hchips { display: flex; flex-wrap: wrap; gap: 6px; }
+.hchip { min-width: 52px; padding: 8px 10px; border-radius: 9px; border: 1.5px solid var(--line); background: var(--surface-2); font-weight: 700; }
+.hchip[aria-pressed="true"] { background: var(--felt); color: #fbf4de; border-color: var(--brass); }
+.picker { display: flex; flex-direction: column; gap: 14px; }
+
+/* Result */
+.result {
+  border: 2px solid var(--ac, var(--line)); border-radius: 16px; padding: 16px;
+  background: color-mix(in srgb, var(--ac, #888) 14%, var(--surface));
+  display: flex; gap: 16px; align-items: flex-start; scroll-margin-top: 80px;
+}
+.symcard {
+  flex: none; width: 84px; height: 116px; border-radius: 10px; background: var(--card);
+  border: 1px solid #b9c3bb; box-shadow: 0 3px 8px rgba(0,0,0,.25); display: grid; place-items: center;
+  font-family: var(--font-display); font-size: 2.9rem; color: var(--ac-ink, var(--ac)); position: relative; overflow: hidden;
+}
+.symcard.striped::after {
+  content: ""; position: absolute; inset-inline: 0; bottom: 0; height: 14px;
+  background: repeating-linear-gradient(135deg, var(--a-d) 0 6px, #7bd0a2 6px 12px);
+}
+.rbody { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.rbody h2 { font-size: 1.55rem; margin: 0; }
+.rsub { margin: 0; color: var(--ink-2); font-size: .9rem; }
+.rwhy { margin: 2px 0 0; font-size: 1.02rem; }
+.burn { margin-top: 6px; font-size: .9rem; color: var(--ink-2); }
+.burn .bar { height: 8px; border-radius: 99px; background: var(--surface-2); border: 1px solid var(--line); margin-top: 4px; overflow: hidden; }
+.burn .bar i { display: block; height: 100%; background: var(--brass); }
+.warn {
+  margin-top: 8px; padding: 8px 12px; border-radius: 10px; font-weight: 700; font-size: .93rem;
+  background: color-mix(in srgb, var(--bad) 14%, var(--surface)); border: 1px solid var(--bad); color: var(--ink);
+}
+
+/* Table */
+.legend { display: flex; flex-wrap: wrap; gap: 6px 10px; margin: 0 0 12px; padding: 0; list-style: none; font-size: .84rem; }
+.legend li { display: flex; align-items: center; gap: 6px; }
+.sw { display: inline-grid; place-items: center; min-width: 26px; height: 22px; border-radius: 5px; font-weight: 800; font-size: .8rem; color: #fff; padding-inline: 4px; }
+.scroll-x { overflow-x: auto; }
+table.st { border-collapse: separate; border-spacing: 2px; width: 100%; table-layout: fixed; direction: ltr; min-width: 330px; }
+table.st th { font-size: .78rem; font-weight: 700; color: var(--ink-2); padding: 2px 0; }
+table.st th.rh { width: 15%; text-align: center; color: var(--ink); font-family: var(--font-display); font-weight: 400; font-size: .85rem; }
+table.st td { height: 31px; text-align: center; font-weight: 800; font-size: .82rem; border-radius: 5px; cursor: pointer; color: #fff; padding: 0; }
+table.st td.sel { outline: 3px solid var(--brass); outline-offset: -1px; position: relative; z-index: 1; }
+.c-H, .sw.c-H { background: var(--a-h); }
+.c-S, .sw.c-S { background: var(--a-s); color: var(--on-s) !important; }
+.c-D, .sw.c-D { background: var(--a-d); }
+.c-Ds, .sw.c-Ds { background: repeating-linear-gradient(135deg, var(--a-d) 0 5px, #55bb81 5px 10px); text-shadow: 0 1px 1px rgba(0,0,0,.35); }
+.c-P, .sw.c-P { background: var(--a-p); }
+.c-R, .sw.c-R { background: var(--a-r); }
+
+.ins h2 { color: var(--bad); }
+.ins .big { font-size: 1.05rem; font-weight: 700; margin: 0 0 8px; }
+.facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; }
+.fact { background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 8px; text-align: center; }
+.fact b { display: block; font-family: var(--font-display); font-weight: 400; font-size: 1.35rem; }
+.fact span { font-size: .78rem; color: var(--ink-2); }
+.tips { margin: 0; padding-inline-start: 20px; display: flex; flex-direction: column; gap: 8px; }
+
+/* Quiz */
+.stats { display: grid; grid-template-columns: repeat(4, 1fr) auto; gap: 8px; align-items: stretch; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 6px 4px; text-align: center; min-width: 0; }
+.stat b { display: block; font-family: var(--font-display); font-weight: 400; font-size: 1.3rem; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.stat span { font-size: .72rem; color: var(--ink-2); }
+.reset { border: 1.5px solid var(--line); background: var(--surface); border-radius: 10px; padding: 4px 10px; font-size: .78rem; font-weight: 700; color: var(--ink-2); }
+.reset.armed { border-color: var(--bad); color: var(--bad); }
+.filter { display: flex; flex-wrap: wrap; gap: 6px; }
+.filter button { padding: 6px 14px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--surface); font-weight: 700; font-size: .9rem; }
+.filter button[aria-pressed="true"] { background: var(--felt); color: #fbf4de; border-color: var(--brass); }
+
+.rail { background: linear-gradient(160deg, #7a4f2d, var(--wood) 50%, #44291a); padding: 10px; border-radius: 24px; box-shadow: 0 4px 14px rgba(0,0,0,.35); }
+.felt {
+  border-radius: 15px; padding: 16px 12px 18px; color: #e8f2ec;
+  background: radial-gradient(90% 80% at 50% 40%, #146448, var(--felt) 60%, var(--felt-deep));
+  box-shadow: inset 0 0 0 2px var(--brass), inset 0 0 34px rgba(0,0,0,.4);
+  display: flex; flex-direction: column; gap: 16px; align-items: center;
+}
+.seat { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.seat .who { font-size: .8rem; letter-spacing: .06em; font-weight: 700; color: #f1dfaa; display: flex; gap: 8px; align-items: baseline; }
+.seat .who em { font-style: normal; font-family: var(--font-display); font-size: 1.05rem; color: #fff; }
+.hand { display: flex; gap: 10px; justify-content: center; direction: ltr; }
+.line { width: 70%; height: 1px; background: linear-gradient(90deg, transparent, var(--brass), transparent); opacity: .7; }
+
+.card { font-size: 10px; width: 7.2em; height: 10em; flex: none; background: var(--card); color: var(--card-ink); border-radius: .7em; position: relative; direction: ltr; box-shadow: 0 .2em .6em rgba(0,0,0,.45); border: 1px solid #aeb8b0; animation: deal .34s ease-out backwards; animation-delay: var(--d, 0ms); font-family: var(--font-body); user-select: none; }
+.card.red { color: var(--card-red); }
+.card .idx { position: absolute; display: flex; flex-direction: column; align-items: center; line-height: 1; font-weight: 800; }
+.card .idx b { font-size: 1.55em; font-weight: 800; letter-spacing: -.04em; }
+.card .idx i { font-style: normal; font-size: 1.25em; margin-top: .05em; }
+.card .tl { top: .4em; left: .45em; }
+.card .br { bottom: .4em; right: .45em; transform: rotate(180deg); }
+.card .face { position: absolute; inset: 1.1em 1.9em; }
+.card .pip { position: absolute; font-size: 1.9em; line-height: 1; transform: translate(-50%, -50%); }
+.card .pip.inv { transform: translate(-50%, -50%) rotate(180deg); }
+.card .ace { position: absolute; inset: 0; display: grid; place-items: center; font-size: 4.4em; line-height: 1; }
+.card .frame { position: absolute; inset: .2em -.7em; border: .12em solid currentColor; border-radius: .35em; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; background: color-mix(in srgb, currentColor 7%, #fff); }
+.card .frame span { font-family: var(--font-display); font-size: 3.4em; }
+.card .frame i { font-style: normal; font-size: 1.6em; }
+.card.back { background: repeating-linear-gradient(45deg, #b3262d 0 .5em, #8f1a21 .5em 1em); border: .45em solid #fff; }
+@keyframes deal { from { opacity: 0; transform: translateY(-1.4em) rotate(-4deg) scale(.92); } to { opacity: 1; transform: none; } }
+@media (min-width: 560px) { .card { font-size: 12px; } }
+
+.qpanel { display: flex; flex-direction: column; gap: 12px; }
+.actions { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.abtn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
+  padding: 10px 2px; border-radius: 12px; border: 0; color: #fff; font-weight: 700; min-height: 68px; min-width: 0;
+}
+.abtn b { font-family: var(--font-display); font-weight: 400; font-size: 1.55rem; line-height: 1.1; }
+.abtn span { font-size: .78rem; }
+.abtn.c-S { color: var(--on-s); }
+.abtn:disabled { opacity: .35; cursor: not-allowed; }
+.abtn.ring-good { box-shadow: 0 0 0 3px var(--surface), 0 0 0 6px var(--good); }
+.abtn.ring-bad { box-shadow: 0 0 0 3px var(--surface), 0 0 0 6px var(--bad); }
+.askbox { text-align: center; }
+.askbox h3 { font-size: 1.15rem; margin-bottom: 10px; }
+.ins2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ins2 button { padding: 14px 8px; border-radius: 12px; border: 2px solid var(--line); background: var(--surface-2); font-weight: 800; font-size: 1.05rem; }
+.ins2 button.ring-good { box-shadow: 0 0 0 3px var(--surface), 0 0 0 6px var(--good); }
+.ins2 button.ring-bad { box-shadow: 0 0 0 3px var(--surface), 0 0 0 6px var(--bad); }
+.fb { border-radius: 14px; border: 2px solid var(--line); padding: 14px 16px; background: var(--surface); display: flex; flex-direction: column; gap: 6px; }
+.fb.ok { border-color: var(--good); }
+.fb.no { border-color: var(--bad); }
+.fb h3 { font-size: 1.35rem; }
+.fb.ok h3 { color: var(--good); }
+.fb.no h3 { color: var(--bad); }
+.fb p { margin: 0; }
+.fb .near { color: var(--ink-2); font-size: .95rem; }
+.next { margin-top: 6px; padding: 12px; border-radius: 12px; border: 2px solid var(--brass); background: var(--felt); color: #fbf4de; font-weight: 800; font-size: 1.05rem; }
+.kbd { font-size: .78rem; color: var(--ink-2); text-align: center; }
+
+@media (prefers-reduced-motion: reduce) { .card { animation: none; } * { scroll-behavior: auto !important; } }
+@media (max-width: 380px) {
+  .top h1 { font-size: 1.6rem; }
+  .result { flex-direction: column; align-items: center; text-align: center; }
+  .stat b { font-size: 1.1rem; }
+}
+</style>
+
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="top-row">
+      <div>
+        <h1>אסטרטגיית בלאק ג'ק</h1>
+        <p>הטבלה הבסיסית, כרטיס הסבר לכל יד, ובחינה אינסופית לתרגול</p>
+      </div>
+      <button class="theme-btn" id="themeBtn" type="button" aria-label="החלף מצב כהה ובהיר">◐</button>
+    </div>
+    <ul class="tags">
+      <li>4–8 חפיסות</li>
+      <li>הדילר עומד על 17 רך</li>
+      <li>הכפלה אחרי פיצול</li>
+      <li>כניעה מאוחרת</li>
+    </ul>
+  </div>
+</header>
+
+<nav class="tabbar" aria-label="ניווט ראשי">
+  <div class="wrap">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" id="tab-strategy" data-tab="strategy" aria-selected="true" aria-controls="p-strategy" type="button">אסטרטגיה</button>
+      <button class="tab" role="tab" id="tab-quiz" data-tab="quiz" aria-selected="false" aria-controls="p-quiz" type="button">בחינה</button>
+    </div>
+  </div>
+</nav>
+
+<main class="wrap">
+  <!-- ============ STRATEGY ============ -->
+  <section class="panel" id="p-strategy" role="tabpanel" aria-labelledby="tab-strategy">
+    <div class="box picker">
+      <div>
+        <p class="lbl">הקלף הגלוי של הדילר</p>
+        <div class="dchips" id="dchips"></div>
+      </div>
+      <div>
+        <p class="lbl">סוג היד</p>
+        <div class="seg" id="typeSeg"></div>
+      </div>
+      <div>
+        <p class="lbl">היד שלך</p>
+        <div class="hchips" id="hchips"></div>
+      </div>
+    </div>
+
+    <div class="result" id="result" aria-live="polite"></div>
+
+    <div class="box">
+      <h2>הטבלה המלאה</h2>
+      <ul class="legend" id="legend"></ul>
+      <div class="seg" id="tblSeg" style="margin-bottom:10px"></div>
+      <div class="scroll-x"><table class="st" id="tbl"></table></div>
+      <p class="rsub" style="margin-top:8px">לחיצה על משבצת מעדכנת את הבוחר ומציגה את הסבר המהלך.</p>
+    </div>
+
+    <div class="box ins">
+      <h2>להמר שלדילר יש 21?</h2>
+      <p class="big">לא. אף פעם.</p>
+      <p style="margin:0">ביטוח משלם 2:1, ולכן הוא משתלם רק אם הסיכוי לבלאק ג'ק של הדילר הוא לפחות 33.3%. הסיכוי האמיתי הוא כ-31%.</p>
+      <div class="facts">
+        <div class="fact"><b>33.3%</b><span>נדרש כדי להשתוות</span></div>
+        <div class="fact"><b>~31%</b><span>הסיכוי האמיתי</span></div>
+        <div class="fact"><b>~7%</b><span>יתרון הבית על ההימור</span></div>
+      </div>
+      <p style="margin:0">אותו דבר חל על Even Money כשיש לך בלאק ג'ק: זה ביטוח בשם אחר, ולכן גם אותו משאירים.</p>
+    </div>
+
+    <div class="box">
+      <h2>טיפים קצרים</h2>
+      <ul class="tips">
+        <li><b>יד רכה</b> היא יד עם אס שנספר כ-11, למשל <bdi>A,6</bdi> היא 17 רכה. אי אפשר להישרף מקלף אחד, כי האס יכול לחזור להיות 1.</li>
+        <li><b>הכפלה:</b> מכפילים כשהיד שלך חזקה והדילר חלש. הטבלה מתירה הכפלה גם אחרי פיצול.</li>
+        <li><b>פיצול:</b> מפצלים זוג כשהטבלה אומרת P. אסים ושמיניות תמיד, עשיריות וחמישיות אף פעם.</li>
+        <li><b>כניעה מאוחרת:</b> אחרי שהדילר בדק אם יש לו בלאק ג'ק, אפשר לוותר על חצי מההימור ולצאת מהיד. זה נכון רק ב-15 ו-16 מול דילר חזק.</li>
+        <li><b>יתרון הבית</b> יורד לכ-0.5% כשמשחקים לפי הטבלה. הוא קטן, אבל הוא נשאר.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="panel" id="p-quiz" role="tabpanel" aria-labelledby="tab-quiz" hidden>
+    <div class="stats" id="stats"></div>
+    <div class="filter" id="filter"></div>
+    <div class="rail"><div class="felt" id="qtable"></div></div>
+    <div class="qpanel" id="qctl"></div>
+    <p class="kbd">מקשים: <bdi>H S D P R</bdi> לבחירה, <bdi>Enter</bdi> או <bdi>N</bdi> ליד הבאה</p>
+  </section>
+</main>
+
+<script>
+(function () {
+  "use strict";
+  var DEALER = ["2","3","4","5","6","7","8","9","10","A"];
+  var BURN = [35,37,40,42,42,26,24,23,23,17];
+  var ACT = {
+    H: { n: "קח קלף", sub: "קח קלף", btn: "קח" },
+    S: { n: "עמוד", sub: "עמוד", btn: "עמוד" },
+    D: { n: "הכפל", sub: "הכפל, ואם אסור קח קלף", btn: "הכפל" },
+    Ds: { n: "הכפל", sub: "הכפל, ואם אסור עמוד", btn: "הכפל" },
+    P: { n: "פצל", sub: "פצל", btn: "פצל" },
+    R: { n: "היכנע", sub: "היכנע, ואם אסור קח קלף", btn: "כניעה" }
+  };
+  var FALLBACK = { D: "H", Ds: "S", R: "H" };
+
+  function row(s) {
+    return s.split(" ").reduce(function (a, t) {
+      var m = t.split("×");
+      if (m.length > 1) { for (var i = 0; i < +m[1]; i++) a.push(m[0]); } else a.push(t);
+      return a;
+    }, []);
+  }
+  var HARD = [
+    ["≤8", "H×10"], ["9", "H D D D D H H H H H"], ["10", "D×8 H H"], ["11", "D×9 H"],
+    ["12", "H H S S S H H H H H"], ["13", "S×5 H×5"], ["14", "S×5 H×5"],
+    ["15", "S×5 H H H R H"], ["16", "S×5 H H R R R"], ["17+", "S×10"]
+  ];
+  var SOFT = [
+    ["A,2", "H H H D D H×5"], ["A,3", "H H H D D H×5"], ["A,4", "H H D D D H×5"], ["A,5", "H H D D D H×5"],
+    ["A,6", "H D D D D H×5"], ["A,7", "S Ds Ds Ds Ds S S H H H"], ["A,8", "S×10"], ["A,9", "S×10"]
+  ];
+  var PAIR = [
+    ["2,2", "P×6 H×4"], ["3,3", "P×6 H×4"], ["4,4", "H H H P P H×5"], ["5,5", "D×8 H H"],
+    ["6,6", "P×5 H×5"], ["7,7", "P×6 H×4"], ["8,8", "P×10"], ["9,9", "P×5 S P P S S"],
+    ["10,10", "S×10"], ["A,A", "P×10"]
+  ];
+  var TABLES = { hard: HARD, soft: SOFT, pair: PAIR };
+  var TYPE_NAME = { hard: "קשה", soft: "רכה", pair: "זוג" };
+  Object.keys(TABLES).forEach(function (t) {
+    TABLES[t] = TABLES[t].map(function (r) {
+      var cells = row(r[1]);
+      if (cells.length !== 10) console.error("bad row", t, r[0], cells.length);
+      return { key: r[0], cells: cells };
+    });
+  });
+  function findRow(type, key) {
+    var L = TABLES[type];
+    for (var i = 0; i < L.length; i++) if (L[i].key === key) return L[i];
+    return L[0];
+  }
+  function actionFor(type, key, di) { return findRow(type, key).cells[di]; }
+  function codeFor(a) { return a === "Ds" ? "Ds" : a; }
+  function dname(di) { return DEALER[di] === "A" ? "אס" : DEALER[di]; }
+
+  /* ---------- explanations ---------- */
+  function why(type, key, di, act) {
+    var weak = di <= 4, d = DEALER[di], dn = dname(di);
+    if (type === "pair") {
+      if (key === "A,A") return "שני אסים הם התחלה מצוינת: כל אס בנפרד יכול להגיע ל-21. תמיד פצל.";
+      if (key === "8,8") return "16 היא היד הגרועה ביותר. פצל, והתחל משתי ידיים של 8 במקום להיתקע עם 16, גם מול דילר חזק.";
+      if (key === "10,10") return "20 היא יד כמעט בלתי מנוצחת. פיצול מוותר על יד חזקה תמורת שתי ידיים לא בטוחות. עמוד.";
+      if (key === "5,5") return act === "D"
+‎        ? "10 היא בסיס מצוין להכפלה, אז לא מפצלים חמישיות. הכפל כאילו זו יד של 10."
+‎        : "מול " + dn + " הדילר חזק מדי להכפלה על 10. לא מפצלים חמישיות, קח קלף.";
+      if (key === "9,9") {
+        if (act === "P") return "שתי ידיים שמתחילות ב-9 מרוויחות יותר מ-18 אחת מול " + dn + ". פצל.";
+        if (d === "7") return "18 מול 7: הדילר צפוי להגיע ל-17 ו-18 מנצחת אותו. עמוד ואל תפצל.";
+        return "מול " + dn + " הדילר חזק, אבל 18 עדיין טובה מספיק. אל תסתכן בפיצול, עמוד.";
+      }
+      if (key === "4,4") return act === "P"
+‎        ? "הדילר חלש מאוד (" + dn + "), אז שווה לפצל 4,4 ולנצל את זה."
+‎        : "8 נמוך מדי לפיצול ואי אפשר להישרף ממנו. קח קלף.";
+      if (key === "6,6") return act === "P"
+‎        ? "12 היא יד חלשה. מול דילר חלש פצל ל-6 והתחל משתי ידיים טובות יותר."
+‎        : "מול דילר חזק פיצול רק מכפיל את הסיכון. קח קלף.";
+      return act === "P"
+‎        ? "מול דילר חלש (עד 7) שתי ידיים קטנות עדיפות על יד אחת חלשה. פצל."
+‎        : "מול דילר חזק פיצול רק מוסיף הפסדים. קח קלף.";
+    }
+    if (type === "soft") {
+      if (act === "H") return key === "A,7"
+‎        ? "18 רכה מול 9, 10 ואס לא מספיקה. אי אפשר להישרף מקלף אחד, אז קח קלף ונסה לשפר."
+‎        : "יד רכה לא יכולה להישרף מקלף אחד, אז אין סיבה לעמוד על סכום נמוך. קח קלף.";
+      if (act === "D") return "הדילר חלש והיד הרכה לא יכולה להישרף מקלף אחד, אז ההכפלה כמעט בלי סיכון. אם אסור להכפיל, קח קלף.";
+      if (act === "Ds") return "הדילר חלש ואי אפשר להישרף מקלף אחד, לכן הכפל. אם אסור להכפיל, עמוד על 18.";
+      if (key === "A,7") return "18 רכה מול " + dn + " חזקה מספיק. עמוד.";
+      return "19 או 20 רכות הן ידיים חזקות. עמוד.";
+    }
+    var n = key === "≤8" ? 8 : key === "17+" ? 17 : +key;
+    if (n <= 8) return "הסכום נמוך ואי אפשר להישרף מקלף אחד. קח קלף.";
+    if (n === 9) return act === "D"
+‎      ? "הדילר חלש, ו-9 הופכת ל-19 או 20 עם קלף גבוה. הכפל. אם אסור להכפיל, קח קלף."
+‎      : "הדילר לא חלש מספיק להכפלה על 9. קח קלף.";
+    if (n === 10) return act === "D"
+‎      ? "הרבה קלפים של 10 משלימים את היד ל-20, לכן הכפל. אם אסור להכפיל, קח קלף."
+‎      : "מול " + dn + " הדילר חזק מדי להכפלה על 10. קח קלף.";
+    if (n === 11) return act === "D"
+‎      ? "קלף של 10 מביא ל-21, ואין לדילר יתרון ברור. הכפל. אם אסור להכפיל, קח קלף."
+‎      : "מול אס הדילר חזק מדי להכפלה על 11. קח קלף.";
+    if (n === 17) return "17 ומעלה: סיכוי השריפה בקלף נוסף גבוה מדי. עמוד.";
+    if (act === "R") return "מול " + dn + " היד הזו מפסידה לעיתים קרובות. כניעה מאבדת חצי הימור במקום להסתכן בכולו. אם אסור להיכנע, קח קלף.";
+    if (act === "S") return "הדילר חלש, תן לו להישרף.";
+    if (n === 12 && di <= 1) return "12 מול " + d + " גבולי: הדילר נשרף רק ב-" + BURN[di] + "% מהמקרים, ואילו קלף אחד שורף 12 רק ב-31%. לכן קח קלף.";
+    return "הדילר צפוי להגיע ל-17, נסה לשפר.";
+  }
+  function nearText(e, c) {
+    if (e === "D" && c === "H") return "קח קלף נכון רק כשאסור להכפיל. כשמותר, הכפלה מרוויחה יותר מול דילר כזה.";
+    if (e === "Ds" && c === "S") return "עמוד נכון רק כשאסור להכפיל. כשמותר, הכפל.";
+    if (e === "R" && c === "H") return "קח קלף נכון רק כשאסור להיכנע. כשכניעה מאוחרת מותרת, היא מפסידה פחות.";
+    return "";
+  }
+
+  /* ---------- helpers ---------- */
+  function $(id) { return document.getElementById(id); }
+  function lsGet(k, def) { try { var v = localStorage.getItem(k); return v === null ? def : v; } catch (e) { return def; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function reduced() { return window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches; }
+  function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+  function ri(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+  function bd(s) { return "<bdi>" + s + "</bdi>"; }
+
+  /* ---------- theme ---------- */
+  var root = document.documentElement;
+  var savedTheme = lsGet("bj-theme", "");
+  if (savedTheme === "dark" || savedTheme === "light") root.setAttribute("data-theme", savedTheme);
+  $("themeBtn").addEventListener("click", function () {
+    var cur = root.getAttribute("data-theme");
+    if (!cur) cur = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    var next = cur === "dark" ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    lsSet("bj-theme", next);
+  });
+
+  /* ---------- tabs ---------- */
+  var tab = lsGet("bj-tab", "strategy");
+  function showTab(t, save) {
+    tab = t === "quiz" ? "quiz" : "strategy";
+    ["strategy", "quiz"].forEach(function (n) {
+      $("p-" + n).hidden = n !== tab;
+      $("tab-" + n).setAttribute("aria-selected", n === tab ? "true" : "false");
+    });
+    if (save) lsSet("bj-tab", tab);
+    if (tab === "quiz" && !Q) newQuestion();
+  }
+  document.querySelectorAll(".tab").forEach(function (b) {
+    b.addEventListener("click", function () { showTab(b.dataset.tab, true); window.scrollTo(0, 0); });
+  });
+
+  /* ---------- strategy tab ---------- */
+  var SEL = { type: "hard", key: "16", di: 8 };
+  var tblType = "hard";
+  var DEFAULT_KEY = { hard: "16", soft: "A,7", pair: "8,8" };
+
+  function renderLegend() {
+    var items = [["H", "קח קלף"], ["S", "עמוד"], ["D", "הכפל, אחרת קח"], ["Ds", "הכפל, אחרת עמוד"], ["P", "פצל"], ["R", "היכנע, אחרת קח"]];
+    $("legend").innerHTML = items.map(function (i) {
+      return '<li><span class="sw c-' + i[0] + '">' + i[0] + "</span>" + i[1] + "</li>";
+    }).join("");
+  }
+  function renderPicker() {
+    $("dchips").innerHTML = DEALER.map(function (d, i) {
+      return '<button type="button" class="dchip" data-i="' + i + '" aria-pressed="' + (SEL.di === i) + '" aria-label="דילר ' + d + '">' + d + "</button>";
+    }).join("");
+    $("typeSeg").innerHTML = ["hard", "soft", "pair"].map(function (t) {
+      return '<button type="button" data-t="' + t + '" aria-pressed="' + (SEL.type === t) + '">' + TYPE_NAME[t] + "</button>";
+    }).join("");
+    $("hchips").innerHTML = TABLES[SEL.type].map(function (r) {
+      return '<button type="button" class="hchip" data-k="' + r.key + '" aria-pressed="' + (SEL.key === r.key) + '">' + bd(r.key) + "</button>";
+    }).join("");
+  }
+  function renderResult() {
+    var act = actionFor(SEL.type, SEL.key, SEL.di);
+    var base = act === "Ds" ? "D" : act;
+    var info = ACT[act];
+    var ink = act === "S" ? "var(--a-s-ink)" : "var(--a-" + base.toLowerCase() + ")";
+    var el = $("result");
+    el.style.setProperty("--ac", "var(--a-" + base.toLowerCase() + ")");
+    el.style.setProperty("--ac-ink", ink);
+    var warn = DEALER[SEL.di] === "A" ? '<div class="warn">הדילר מראה אס: אל תיקח ביטוח, וגם לא Even Money.</div>' : "";
+    el.innerHTML =
+      '<div class="symcard' + (act === "Ds" ? " striped" : "") + '">' + act + "</div>" +
+      '<div class="rbody"><h2>' + info.n + "</h2>" +
+      '<p class="rsub">' + bd(SEL.key) + " מול " + dname(SEL.di) + " · " + info.sub + "</p>" +
+      '<p class="rwhy">' + why(SEL.type, SEL.key, SEL.di, act) + "</p>" +
+      '<div class="burn">סיכוי שהדילר יישרף עם ' + dname(SEL.di) + ": <b>" + BURN[SEL.di] + '%</b><div class="bar"><i style="width:' + (BURN[SEL.di] / 50 * 100) + '%"></i></div></div>' +
+      warn + "</div>";
+  }
+  function renderTable() {
+    var head = '<tr><th class="rh"></th>' + DEALER.map(function (d) { return "<th>" + d + "</th>"; }).join("") + "</tr>";
+    var body = TABLES[tblType].map(function (r) {
+      return '<tr><th class="rh" scope="row">' + r.key + "</th>" + r.cells.map(function (c, i) {
+        var sel = SEL.type === tblType && SEL.key === r.key && SEL.di === i ? " sel" : "";
+        return '<td class="c-' + c + sel + '" data-k="' + r.key + '" data-i="' + i + '">' + c + "</td>";
+      }).join("") + "</tr>";
+    }).join("");
+    $("tbl").innerHTML = "<thead>" + head + "</thead><tbody>" + body + "</tbody>";
+    $("tblSeg").innerHTML = ["hard", "soft", "pair"].map(function (t) {
+      return '<button type="button" data-t="' + t + '" aria-selected="' + (tblType === t) + '">' + (t === "hard" ? "קשות" : t === "soft" ? "רכות" : "זוגות") + "</button>";
+    }).join("");
+  }
+  function renderStrategy() { renderPicker(); renderResult(); renderTable(); }
+  function scrollToResult() {
+    var r = $("result");
+    var top = r.getBoundingClientRect().top;
+    if (top < 80 || top > window.innerHeight * 0.6) r.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "center" });
+  }
+
+  $("dchips").addEventListener("click", function (e) {
+    var b = e.target.closest(".dchip"); if (!b) return;
+    SEL.di = +b.dataset.i; renderStrategy();
+  });
+  $("typeSeg").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    SEL.type = b.dataset.t; SEL.key = DEFAULT_KEY[SEL.type]; tblType = SEL.type; renderStrategy();
+  });
+  $("hchips").addEventListener("click", function (e) {
+    var b = e.target.closest(".hchip"); if (!b) return;
+    SEL.key = b.dataset.k; renderStrategy();
+  });
+  $("tblSeg").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    tblType = b.dataset.t; renderTable();
+  });
+  $("tbl").addEventListener("click", function (e) {
+    var td = e.target.closest("td"); if (!td) return;
+    SEL.type = tblType; SEL.key = td.dataset.k; SEL.di = +td.dataset.i;
+    renderStrategy(); scrollToResult();
+  });
+
+  /* ---------- cards ---------- */
+  var SUITS = ["♠", "♥", "♦", "♣"];
+  var PIPS = {
+    "2": [[1,0],[1,6]], "3": [[1,0],[1,3],[1,6]], "4": [[0,0],[2,0],[0,6],[2,6]],
+    "5": [[0,0],[2,0],[1,3],[0,6],[2,6]], "6": [[0,0],[2,0],[0,3],[2,3],[0,6],[2,6]],
+    "7": [[0,0],[2,0],[1,1.5],[0,3],[2,3],[0,6],[2,6]],
+    "8": [[0,0],[2,0],[1,1.5],[0,3],[2,3],[1,4.5],[0,6],[2,6]],
+    "9": [[0,0],[2,0],[0,2],[2,2],[1,3],[0,4],[2,4],[0,6],[2,6]],
+    "10": [[0,0],[2,0],[1,1],[0,2],[2,2],[0,4],[2,4],[1,5],[0,6],[2,6]]
+  };
+  function cardHTML(c, delay) {
+    var d = "--d:" + delay + "ms";
+    if (c.back) return '<div class="card back" style="' + d + '"></div>';
+    var red = c.s === "♥" || c.s === "♦";
+    var face;
+    if (c.r === "A") face = '<div class="ace">' + c.s + "</div>";
+    else if (c.r === "J" || c.r === "Q" || c.r === "K") face = '<div class="frame"><span>' + c.r + "</span><i>" + c.s + "</i></div>";
+    else face = PIPS[c.r].map(function (p) {
+      return '<span class="pip' + (p[1] > 3 ? " inv" : "") + '" style="left:' + (p[0] * 50) + "%;top:" + (p[1] / 6 * 100) + '%">' + c.s + "</span>";
+    }).join("");
+    var idx = "<b>" + c.r + "</b><i>" + c.s + "</i>";
+    return '<div class="card' + (red ? " red" : "") + '" style="' + d + '" role="img" aria-label="' + c.r + " " + c.s + '">' +
+      '<div class="idx tl">' + idx + '</div><div class="idx br">' + idx + '</div><div class="face">' + face + "</div></div>";
+  }
+  function cv(r) { return r === "A" ? 11 : (r === "J" || r === "Q" || r === "K") ? 10 : +r; }
+  function totals(cards) {
+    var t = 0, aces = 0;
+    cards.forEach(function (c) { t += cv(c.r); if (c.r === "A") aces++; });
+    while (t > 21 && aces > 0) { t -= 10; aces--; }
+    var soft = aces > 0;
+    return { total: t, soft: soft };
+  }
+  function handLabel(cards) {
+    var t = totals(cards);
+    return t.soft ? (t.total - 10) + " / " + t.total : String(t.total);
+  }
+  function rankFor(v) { return v === 10 ? pick(["10", "J", "Q", "K"]) : String(v); }
+
+  function makeHand(type, key) {
+    var s1 = pick(SUITS), s2 = pick(SUITS);
+    if (type === "pair") {
+      var r = key === "A,A" ? "A" : key === "10,10" ? pick(["10", "J", "Q", "K"]) : key.split(",")[0];
+      var other; do { other = pick(SUITS); } while (other === s1);
+      return [{ r: r, s: s1 }, { r: r, s: other }];
+    }
+    if (type === "soft") {
+      var x = key.split(",")[1];
+      var a = [{ r: "A", s: s1 }, { r: x, s: s2 }];
+      return Math.random() < 0.5 ? a : a.reverse();
+    }
+    var sum = key === "≤8" ? ri(5, 8) : key === "17+" ? ri(17, 19) : +key;
+    var lo = Math.max(2, sum - 10), hi = Math.min(10, sum - 2), x1, x2;
+    do { x1 = ri(lo, hi); x2 = sum - x1; } while (x1 === x2);
+    return [{ r: rankFor(x1), s: s1 }, { r: rankFor(x2), s: s2 }];
+  }
+
+  /* ---------- quiz ---------- */
+  var Q = null, last = "";
+  var filter = lsGet("bj-filter", "all");
+  if (["all", "hard", "soft", "pair"].indexOf(filter) < 0) filter = "all";
+  var stats = { c: 0, t: 0, s: 0, b: 0 };
+  try { var raw = JSON.parse(lsGet("bj-stats", "")); if (raw && typeof raw.c === "number") stats = { c: raw.c | 0, t: raw.t | 0, s: raw.s | 0, b: raw.b | 0 }; } catch (e) {}
+  var resetArmed = false, resetTimer = null;
+
+  function saveStats() { lsSet("bj-stats", JSON.stringify(stats)); }
+  function renderStats() {
+    var acc = stats.t ? Math.round(stats.c / stats.t * 100) + "%" : "–";
+    $("stats").innerHTML =
+      '<div class="stat"><b>' + stats.c + "/" + stats.t + "</b><span>נכונות</span></div>" +
+      '<div class="stat"><b>' + acc + "</b><span>דיוק</span></div>" +
+      '<div class="stat"><b>' + stats.s + "</b><span>רצף</span></div>" +
+      '<div class="stat"><b>' + stats.b + "</b><span>שיא רצף</span></div>" +
+      '<button type="button" class="reset' + (resetArmed ? " armed" : "") + '" id="resetBtn">' + (resetArmed ? "בטוח? לחץ שוב" : "איפוס") + "</button>";
+  }
+  function renderFilter() {
+    var names = { all: "הכל", hard: "קשות", soft: "רכות", pair: "זוגות" };
+    $("filter").innerHTML = Object.keys(names).map(function (k) {
+      return '<button type="button" data-f="' + k + '" aria-pressed="' + (filter === k) + '">' + names[k] + "</button>";
+    }).join("");
+  }
+  function record(ok) {
+    stats.t++;
+    if (ok) { stats.c++; stats.s++; if (stats.s > stats.b) stats.b = stats.s; } else stats.s = 0;
+    saveStats(); renderStats();
+  }
+
+  function newQuestion() {
+    var type, key, di, id, tries = 0;
+    do {
+      if (filter === "all") { var r = Math.random(); type = r < 0.5 ? "hard" : r < 0.75 ? "soft" : "pair"; } else type = filter;
+      key = pick(TABLES[type]).key; di = ri(0, 9);
+      id = type + "|" + key + "|" + di; tries++;
+    } while (id === last && tries < 50);
+    last = id;
+    var dr = DEALER[di];
+    Q = {
+      type: type, key: key, di: di, act: actionFor(type, key, di),
+      hand: makeHand(type, key),
+      up: { r: dr === "10" ? pick(["10", "J", "Q", "K"]) : dr, s: pick(SUITS) },
+      phase: DEALER[di] === "A" ? "ins" : "move", chosen: null, insChosen: null, animate: true
+    };
+    renderQuiz();
+  }
+
+  function renderQuiz() {
+    if (!Q) return;
+    var delay0 = Q.animate ? 0 : -1000;
+    Q.animate = false;
+    var d = function (i) { return delay0 === 0 ? i * 110 : -1000; };
+    $("qtable").innerHTML =
+      '<div class="seat"><div class="who">הדילר</div><div class="hand">' + cardHTML(Q.up, d(0)) + cardHTML({ back: true }, d(2)) + "</div></div>" +
+      '<div class="line"></div>' +
+      '<div class="seat"><div class="who">היד שלי <em>' + bd(handLabel(Q.hand)) + "</em></div>" +
+      '<div class="hand">' + Q.hand.map(function (c, i) { return cardHTML(c, d(i + 1) + 120); }).join("") + "</div></div>";
+    renderCtl();
+  }
+
+  function insFeedHTML() {
+    var ok = Q.insChosen === "no";
+    return '<div class="fb ' + (ok ? "ok" : "no") + '"><h3>' + (ok ? "✓ נכון!" : "✗ לא נכון") + "</h3>" +
+      "<p>התשובה הנכונה היא תמיד <b>בלי ביטוח</b>. הוא משלם 2:1 ולכן צריך סיכוי של 33.3% לבלאק ג'ק, אבל הסיכוי האמיתי הוא כ-31% ויתרון הבית כ-7%.</p>" +
+      '<button type="button" class="next" id="contBtn">המשך ליד</button></div>';
+  }
+  function moveFeedHTML() {
+    var e = Q.act, c = Q.chosen;
+    var ok = c === e || (c === "D" && e === "Ds");
+    var fb = FALLBACK[e];
+    var line = "<p><b>המהלך הנכון: " + bd(codeFor(e)) + "</b> · " + ACT[e].n;
+    if (fb) line += ". אם אסור: " + ACT[fb].n + " (" + bd(fb) + ")";
+    line += "</p>";
+    var near = !ok ? nearText(e, c) : "";
+    return '<div class="fb ' + (ok ? "ok" : "no") + '"><h3>' + (ok ? "✓ נכון!" : "✗ לא נכון") + "</h3>" + line +
+      "<p>" + why(Q.type, Q.key, Q.di, e) + "</p>" +
+      (near ? '<p class="near">' + near + "</p>" : "") +
+      '<button type="button" class="next" id="nextBtn">יד הבאה</button></div>';
+  }
+  function renderCtl() {
+    var el = $("qctl"), html = "";
+    if (Q.phase === "ins" || Q.phase === "insfb") {
+      var done = Q.phase === "insfb";
+      html += '<div class="box askbox"><h3>הדילר מראה אס. לקחת ביטוח?</h3><div class="ins2">' +
+        '<button type="button" data-ins="take" ' + (done ? "disabled" : "") + ' class="' + (done && Q.insChosen === "take" ? "ring-bad" : "") + '">קח ביטוח</button>' +
+        '<button type="button" data-ins="no" ' + (done ? "disabled" : "") + ' class="' + (done ? (Q.insChosen === "no" ? "ring-good" : "") : "") + '">בלי ביטוח</button></div></div>';
+      if (done) html += insFeedHTML();
+    } else {
+      var fbk = Q.phase === "fb";
+      var correct = Q.act === "Ds" ? "D" : Q.act;
+      html += '<div class="actions">' + ["H", "S", "D", "P", "R"].map(function (k) {
+        var cls = "abtn c-" + k;
+        if (fbk) {
+          if (k === correct) cls += " ring-good";
+          else if (k === Q.chosen) cls += " ring-bad";
+        }
+        var dis = fbk || (k === "P" && Q.type !== "pair");
+        return '<button type="button" class="' + cls + '" data-a="' + k + '" ' + (dis ? "disabled" : "") + "><b>" + k + "</b><span>" + ACT[k].btn + "</span></button>";
+      }).join("") + "</div>";
+      if (fbk) html += moveFeedHTML();
+    }
+    el.innerHTML = html;
+  }
+
+  function answerIns(v) {
+    if (!Q || Q.phase !== "ins") return;
+    Q.insChosen = v; Q.phase = "insfb";
+    record(v === "no");
+    renderCtl();
+  }
+  function answerMove(a) {
+    if (!Q || Q.phase !== "move") return;
+    if (a === "P" && Q.type !== "pair") return;
+    Q.chosen = a; Q.phase = "fb";
+    var ok = a === Q.act || (a === "D" && Q.act === "Ds");
+    record(ok);
+    renderCtl();
+  }
+
+  $("qctl").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b || b.disabled) return;
+    if (b.dataset.ins) answerIns(b.dataset.ins);
+    else if (b.dataset.a) answerMove(b.dataset.a);
+    else if (b.id === "contBtn") { Q.phase = "move"; renderCtl(); }
+    else if (b.id === "nextBtn") newQuestion();
+  });
+  $("filter").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    filter = b.dataset.f; lsSet("bj-filter", filter); renderFilter(); newQuestion();
+  });
+  $("stats").addEventListener("click", function (e) {
+    var b = e.target.closest("#resetBtn"); if (!b) return;
+    if (!resetArmed) {
+      resetArmed = true; renderStats();
+      clearTimeout(resetTimer);
+      resetTimer = setTimeout(function () { resetArmed = false; renderStats(); }, 3000);
+    } else {
+      clearTimeout(resetTimer); resetArmed = false;
+      stats = { c: 0, t: 0, s: 0, b: 0 }; saveStats(); renderStats();
+    }
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (tab !== "quiz" || !Q || e.ctrlKey || e.metaKey || e.altKey) return;
+    var code = e.code;
+    if ((code === "Enter" || code === "KeyN") && (Q.phase === "fb" || Q.phase === "insfb")) {
+      e.preventDefault();
+      if (Q.phase === "fb") newQuestion(); else { Q.phase = "move"; renderCtl(); }
+      return;
+    }
+    if (Q.phase === "move") {
+      var map = { KeyH: "H", KeyS: "S", KeyD: "D", KeyP: "P", KeyR: "R" };
+      if (map[code]) { e.preventDefault(); answerMove(map[code]); }
+    }
+  });
+
+  /* ---------- init ---------- */
+  renderLegend(); renderStrategy(); renderStats(); renderFilter();
+  showTab(tab, false);
+})();
+</script>
+
+</body>
+</html>
